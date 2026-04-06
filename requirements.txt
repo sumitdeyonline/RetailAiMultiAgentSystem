@@ -1,0 +1,7 @@
+pandas
+numpy
+scikit-learn
+xgboost
+torch<=2.2.2 ; sys_platform == 'darwin' and platform_machine == 'x86_64'
+torch ; sys_platform != 'darwin' or platform_machine != 'x86_64'
+ipykernel
