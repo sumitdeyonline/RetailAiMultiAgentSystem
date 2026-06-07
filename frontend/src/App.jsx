@@ -47,7 +47,7 @@ function App() {
       }
     } catch (err) {
       console.error(err);
-      setMessages(prev => [...prev, { role: 'agent', agent: 'System', content: 'Connection to server failed. Ensure FastAPI is running on port 8000.' }]);
+      setMessages(prev => [...prev, { role: 'agent', agent: 'System', content: err.message }]);
     } finally {
       setIsLoading(false);
     }

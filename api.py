@@ -11,7 +11,7 @@ app = FastAPI(title="Retail AI Multi-Agent API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -24,35 +24,41 @@ class ChatRequest(BaseModel):
 def chat_endpoint(request: ChatRequest):
     user_input = request.message
     
-    events = graph.stream(
-        {"messages": [HumanMessage(content=user_input)]},
-        {
-            "recursion_limit": 50,
-            "configurable": {"thread_id": request.session_id}
-        }
-    )
-    
     responses = []
     
-    for event in events:
-        for node, state in event.items():
-            if "messages" in state:
-                messages = state.get("messages", [])
-                if messages:
-                    latest_message = messages[-1]
-                    if hasattr(latest_message, "content") and latest_message.content:
+    try:
+        events = graph.stream(
+            {"messages": [HumanMessage(content=user_input)]},
+            {
+                "recursion_limit": 50,
+                "configurable": {"thread_id": request.session_id}
+            }
+        )
+        
+        for event in events:
+            for node, state in event.items():
+                if "messages" in state:
+                    messages = state.get("messages", [])
+                    if messages:
+                        latest_message = messages[-1]
+                        if hasattr(latest_message, "content") and latest_message.content:
+                            responses.append({
+                                "agent": node,
+                                "content": latest_message.content
+                            })
+                elif node == "Orchestrator":
+                    # Useful to show intermediate planning steps
+                    next_agent = state.get("next_agent")
+                    if next_agent != "FINISH":
                         responses.append({
-                            "agent": node,
-                            "content": latest_message.content
+                            "agent": "Orchestrator",
+                            "content": f"Routing task to {next_agent} Agent..."
                         })
-            elif node == "Orchestrator":
-                # Useful to show intermediate planning steps
-                next_agent = state.get("next_agent")
-                if next_agent != "FINISH":
-                    responses.append({
-                        "agent": "Orchestrator",
-                        "content": f"Routing task to {next_agent} Agent..."
-                    })
+    except Exception as e:
+        responses.append({
+            "agent": "System (Error)",
+            "content": f"Backend encountered an error during execution: {str(e)}"
+        })
     
     # Generate the graph image dynamically at runtime
     try:
