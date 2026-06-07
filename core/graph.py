@@ -91,13 +91,20 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.checkpoint.memory import MemorySaver
 from psycopg_pool import ConnectionPool
 
-db_url = os.environ.get("DATABASE_URL")
+#db_url = os.environ.get("DATABASE_URL")
+db_url = os.environ.get("SUPABASE_URL")
+
 checkpointer = MemorySaver()
 
 if db_url:
     try:
-        # Added timeout=5 to prevent the container from hanging indefinitely if the DB is unreachable
-        pool = ConnectionPool(db_url, timeout=5, max_size=5)
+        # Force a 5-second TCP connection timeout to completely prevent startup hangs
+        if "?" in db_url:
+            safe_db_url = f"{db_url}&connect_timeout=5"
+        else:
+            safe_db_url = f"{db_url}?connect_timeout=5"
+            
+        pool = ConnectionPool(safe_db_url, timeout=5, max_size=5)
         checkpointer = PostgresSaver(pool)
         checkpointer.setup()
         print("Enabled persistent Postgres checkpointer for memory.")
