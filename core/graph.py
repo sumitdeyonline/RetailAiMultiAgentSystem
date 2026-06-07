@@ -92,13 +92,19 @@ from langgraph.checkpoint.memory import MemorySaver
 from psycopg_pool import ConnectionPool
 
 db_url = os.environ.get("DATABASE_URL")
+checkpointer = MemorySaver()
+
 if db_url:
-    pool = ConnectionPool(db_url)
-    checkpointer = PostgresSaver(pool)
-    checkpointer.setup()
-    print("Enabled persistent Postgres checkpointer for memory.")
+    try:
+        pool = ConnectionPool(db_url)
+        checkpointer = PostgresSaver(pool)
+        checkpointer.setup()
+        print("Enabled persistent Postgres checkpointer for memory.")
+    except Exception as e:
+        print(f"CRITICAL ERROR connecting to Postgres checkpointer: {e}")
+        print("Falling back to MemorySaver to prevent crash.")
+        checkpointer = MemorySaver()
 else:
-    checkpointer = MemorySaver()
     print("Warning: DATABASE_URL not set. Using in-memory checkpointer.")
 
 graph = workflow.compile(checkpointer=checkpointer)
