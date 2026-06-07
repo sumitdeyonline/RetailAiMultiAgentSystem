@@ -23,5 +23,5 @@ EXPOSE 8080
 # Add virtual environment to PATH so python and uvicorn are globally available
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Start FastAPI server using uvicorn, binding to the Cloud Run PORT variable
-CMD ["sh", "-c", "uvicorn api:app --host 0.0.0.0 --port ${PORT:-8080}"]
+# Start FastAPI server explicitly using the python binary from the virtual environment
+CMD ["/app/.venv/bin/python", "-m", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8080"]
