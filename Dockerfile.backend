@@ -20,5 +20,8 @@ RUN uv sync
 ENV PORT=8080
 EXPOSE 8080
 
-# Start FastAPI server using uvicorn directly from the virtual environment
-CMD ["sh", "-c", "/app/.venv/bin/uvicorn api:app --host 0.0.0.0 --port ${PORT:-8080}"]
+# Add virtual environment to PATH so python and uvicorn are globally available
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Start FastAPI server using uvicorn, binding to the Cloud Run PORT variable
+CMD ["sh", "-c", "uvicorn api:app --host 0.0.0.0 --port ${PORT:-8080}"]
