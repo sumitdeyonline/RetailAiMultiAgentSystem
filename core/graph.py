@@ -96,7 +96,8 @@ checkpointer = MemorySaver()
 
 if db_url:
     try:
-        pool = ConnectionPool(db_url)
+        # Added timeout=5 to prevent the container from hanging indefinitely if the DB is unreachable
+        pool = ConnectionPool(db_url, timeout=5, max_size=5)
         checkpointer = PostgresSaver(pool)
         checkpointer.setup()
         print("Enabled persistent Postgres checkpointer for memory.")
